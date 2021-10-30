@@ -23,14 +23,20 @@ KSQL_URL = "http://localhost:8088"
 
 KSQL_STATEMENT = """
 CREATE TABLE turnstile (
-    ???
+    station_id INT,
+    station_name VARCHAR,
+    line VARCHAR
 ) WITH (
-    ???
+    KAFKA_TOPIC='raw.turnstile.events',
+    VALUE_FORMAT='AVRO',
+    KEY='station_id'
 );
 
 CREATE TABLE turnstile_summary
-WITH (???) AS
-    ???
+WITH (VALUE_FORMAT='JSON') AS
+    SELECT station_id, COUNT(*) AS count
+    FROM turnstile
+    GROUP BY station_id;
 """
 
 
@@ -39,7 +45,7 @@ def execute_statement():
     if topic_check.topic_exists("TURNSTILE_SUMMARY") is True:
         return
 
-    logging.debug("executing ksql statement...")
+    logging.info("executing ksql statement...")
 
     resp = requests.post(
         f"{KSQL_URL}/ksql",
@@ -54,7 +60,7 @@ def execute_statement():
 
     # Ensure that a 2XX status code was returned
     resp.raise_for_status()
-
+    #print(f"resp {resp}")
 
 if __name__ == "__main__":
     execute_statement()
